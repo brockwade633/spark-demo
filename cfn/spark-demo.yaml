@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ClusterName:
+    Type: String
+    Default: SparkDemoCluster
+  EMRRelease:
+    Type: String
+    Default: emr-6.2.0
+
+Resources:
+  EMRServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - elasticmapreduce.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceRole
+
+  EMREC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Sid: ''
+            Effect: Allow
+            Principal:
+              Service: 
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonElasticMapReduceforEC2Role
+
+  EMRInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EMREC2Role
+
+  Cluster:
+    Type: AWS::EMR::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      ServiceRole: !Ref EMRServiceRole
+      JobFlowRole: !Ref EMRInstanceProfile
+      ReleaseLabel: !Ref EMRRelease
+      Instances:
+        MasterInstanceGroup:
+          InstanceCount: 3
+          InstanceType: r4.xlarge
+          Market: ON_DEMAND
+          Name: MasterNodeGroup
+        CoreInstanceGroup:
+          InstanceCount: 4
+          InstanceType: m5.xlarge
+          Market: ON_DEMAND
+          Name: CoreNodeGroup
+        Ec2SubnetId: !Ref ClusterSubnet
+
+  ClusterSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.0.0/16
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
