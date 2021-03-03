@@ -7,6 +7,12 @@ Parameters:
   EMRRelease:
     Type: String
     Default: emr-6.2.0
+  VPCCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
+  SubnetCidrBlock:
+    Type: String
+    Default: 10.0.0.0/16
 
 Resources:
   EMRServiceRole:
@@ -65,15 +71,12 @@ Resources:
           InstanceType: m5.xlarge
           Market: ON_DEMAND
           Name: CoreNodeGroup
-        Ec2SubnetId: !Ref ClusterSubnet
+        Ec2SubnetId: !GetAtt VPCStack.Outputs.SubnetId
 
-  ClusterSubnet:
-    Type: AWS::EC2::Subnet
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      VpcId: !Ref VPC
-      CidrBlock: 10.0.0.0/16
-
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
+      TemplateURL: vpc.yaml
+      Parameters:
+        VPCCidr: !Ref VPCCidrBlock
+        SubnetCidr: !Ref SubnetCidrBlock
